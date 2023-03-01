@@ -7,7 +7,7 @@ build:
 
 .PHONY: test
 test:
-	ktc32-cc 42 > tmp.asm
+	ktc32-cc '5+20-4' > tmp.asm
 	ktc32-asm tmp.asm -o tmp.mem
 	easerial file tmp.mem
 
