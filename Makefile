@@ -1,15 +1,15 @@
 .PHONY: all
-all: build test
+all:  testcom testexe
 
-.PHONY: build
-build:	
-	cargo build --release
 
 .PHONY: test
-test:
-	ktc32-cc '5+20-4' > tmp.asm
-	ktc32-asm tmp.asm -o tmp.mem
-	easerial file tmp.mem
+test: 
+	cargo run 42 > test1.asm
+	ktc32-asm test1.asm -o test1.mem
+	cargo run '5+20-4' > test2.asm
+	ktc32-asm test2.asm -o test2.mem
+	cargo run ' 12 + 34 - 5' > test3.asm
+	ktc32-asm test3.asm -o test3.mem
 
 .PHONY: clean
 clean:
