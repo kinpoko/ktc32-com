@@ -16,45 +16,33 @@ struct Token {
     val: i64,
     str: String,
 }
-#[derive(Debug)]
-struct TokenList(Vec<Token>);
 
-impl TokenList {
-    pub fn iter(&self) -> std::slice::Iter<Token> {
-        self.0.iter()
+fn consume(token: &Token, op: char) -> bool {
+    if token.kind != TokenKind::Reserved || token.str.chars().next().unwrap() != op {
+        return false;
     }
-
-    pub fn consume(&self, iter: &mut std::slice::Iter<Token>, op: char) -> bool {
-        let token = iter.clone().next().unwrap();
-        if token.kind != TokenKind::Reserved || token.str.chars().next().unwrap() != op {
-            return false;
-        }
-        iter.next();
-        true
-    }
-    pub fn expect(&self, iter: &mut std::slice::Iter<Token>, op: char) -> Result<()> {
-        let token = iter.clone().next().unwrap();
-        if token.kind != TokenKind::Reserved || token.str.chars().next().unwrap() != op {
-            return Err(anyhow!(" It is not {}", op));
-        }
-        iter.next();
-        Ok(())
-    }
-    pub fn expect_number(&self, iter: &mut std::slice::Iter<Token>) -> Result<i64> {
-        let token = iter.clone().next().unwrap();
-        if token.kind != TokenKind::Num {
-            return Err(anyhow!(" It is not number {}", token.str));
-        }
-        iter.next();
-        Ok(token.val)
-    }
-    pub fn at_eof(&self, iter: &mut std::slice::Iter<Token>) -> bool {
-        let token = iter.clone().next().unwrap();
-        token.kind == TokenKind::Eof
-    }
+    true
 }
 
-fn tokenize(mut p: String) -> Result<TokenList> {
+fn expect(token: &Token, op: char) -> Result<()> {
+    if token.kind != TokenKind::Reserved || token.str.chars().next().unwrap() != op {
+        return Err(anyhow!(" It is not {}", op));
+    }
+    Ok(())
+}
+
+fn expect_number(token: &Token) -> Result<i64> {
+    if token.kind != TokenKind::Num {
+        return Err(anyhow!(" It is not number {}", token.str));
+    }
+    Ok(token.val)
+}
+
+fn at_eof(token: &Token) -> bool {
+    token.kind == TokenKind::Eof
+}
+
+fn tokenize(mut p: String) -> Result<Vec<Token>> {
     let mut token_list: Vec<Token> = Vec::new();
     while let Some(c) = p.chars().next() {
         if c.is_whitespace() {
@@ -90,7 +78,7 @@ fn tokenize(mut p: String) -> Result<TokenList> {
         val: 0,
         str: "".to_string(),
     });
-    Ok(TokenList(token_list))
+    Ok(token_list)
 }
 
 fn main() -> Result<()> {
@@ -100,19 +88,27 @@ fn main() -> Result<()> {
     let p = env::args().nth(1).unwrap();
 
     let token_list = tokenize(p)?;
-    let mut iter = token_list.iter();
 
     println!("main:");
-    println!("  addi a0, r0, {}", token_list.expect_number(&mut iter)?);
+    println!("  addi a0, r0, {}", expect_number(&token_list[0])?);
 
-    while !token_list.at_eof(&mut iter) {
-        if token_list.consume(&mut iter, '+') {
-            println!("  addi a0, a0, {}", token_list.expect_number(&mut iter)?);
+    let mut i = 1;
+    while i <= token_list.len() {
+        if at_eof(&token_list[i]) {
+            break;
+        }
+
+        if consume(&token_list[i], '+') {
+            i += 1;
+            println!("  addi a0, a0, {}", expect_number(&token_list[i])?);
+            i += 1;
             continue;
         }
 
-        token_list.expect(&mut iter, '-')?;
-        println!("  addi a0, a0, -{}", token_list.expect_number(&mut iter)?);
+        expect(&token_list[i], '-')?;
+        i += 1;
+        println!("  addi a0, a0, -{}", expect_number(&token_list[i])?);
+        i += 1;
     }
     println!("  jalr r0, r0, 12");
 
