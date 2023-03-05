@@ -1,7 +1,3 @@
-.PHONY: all
-all:  testcom testexe
-
-
 .PHONY: test
 test: 
 	cargo run 42 > test1.asm
