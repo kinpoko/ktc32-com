@@ -131,7 +131,7 @@ fn expr(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
 }
 
 fn mul(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
-    let mut node = primary(token_list, i)?;
+    let mut node = unary(token_list, i)?;
 
     loop {
         if consume(&token_list[*i], '*') {
@@ -144,6 +144,22 @@ fn mul(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
             return Ok(node);
         }
     }
+}
+
+fn unary(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
+    if consume(&token_list[*i], '+') {
+        *i += 1;
+        return primary(token_list, i);
+    }
+    if consume(&token_list[*i], '-') {
+        *i += 1;
+        return Ok(new_node(
+            NodeKind::Sub,
+            new_node_num(0),
+            primary(token_list, i)?,
+        ));
+    }
+    primary(token_list, i)
 }
 
 fn primary(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
