@@ -50,7 +50,7 @@ fn tokenize(mut p: String) -> Result<Vec<Token>> {
             continue;
         }
 
-        if c == '+' || c == '-' || c == '(' || c == ')' {
+        if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' {
             p = p.split_off(1);
             token_list.push(Token {
                 kind: TokenKind::Reserved,
@@ -85,6 +85,8 @@ fn tokenize(mut p: String) -> Result<Vec<Token>> {
 enum NodeKind {
     Add,
     Sub,
+    Mul,
+    Div,
     Num,
 }
 #[derive(Debug)]
@@ -134,10 +136,10 @@ fn mul(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
     loop {
         if consume(&token_list[*i], '*') {
             *i += 1;
-            node = new_node(NodeKind::Add, node, mul(token_list, i)?);
+            node = new_node(NodeKind::Mul, node, mul(token_list, i)?);
         } else if consume(&token_list[*i], '/') {
             *i += 1;
-            node = new_node(NodeKind::Sub, node, mul(token_list, i)?);
+            node = new_node(NodeKind::Div, node, mul(token_list, i)?);
         } else {
             return Ok(node);
         }
@@ -149,6 +151,7 @@ fn primary(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
         *i += 1;
         let node = expr(token_list, i)?;
         expect(&token_list[*i], ')')?;
+        *i += 1;
         return Ok(node);
     }
     *i += 1;
@@ -178,6 +181,22 @@ fn gen(node: Node) {
         NodeKind::Sub => {
             println!("  sub a0, a1");
         }
+        NodeKind::Mul => {
+            println!("  mov t0, a0");
+            println!("  addi a1, a1, -1");
+            println!("  beq a1, zero, 6");
+            println!("  add a0, t0");
+            println!("  jal zero, -14");
+        }
+        NodeKind::Div => {
+            println!("  mov t0, zero");
+            println!("  blt a0, a1, 10");
+            println!("  addi t0, t0, 1");
+            println!("  sub a0, a1");
+            println!("  jal zero, -14");
+            println!("  mov a0, t0");
+        }
+
         _ => {}
     }
     println!("  addi sp, sp, -4");
