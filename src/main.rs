@@ -17,15 +17,15 @@ struct Token {
     str: String,
 }
 
-fn consume(token: &Token, op: char) -> bool {
-    if token.kind != TokenKind::Reserved || token.str.chars().next().unwrap() != op {
+fn consume(token: &Token, op: &str) -> bool {
+    if token.kind != TokenKind::Reserved || token.str != op {
         return false;
     }
     true
 }
 
-fn expect(token: &Token, op: char) -> Result<()> {
-    if token.kind != TokenKind::Reserved || token.str.chars().next().unwrap() != op {
+fn expect(token: &Token, op: &str) -> Result<()> {
+    if token.kind != TokenKind::Reserved || token.str != op {
         return Err(anyhow!(" It is not {}", op));
     }
     Ok(())
@@ -58,6 +58,43 @@ fn tokenize(mut p: String) -> Result<Vec<Token>> {
                 str: c.to_string(),
             });
             continue;
+        }
+
+        if c == '=' || c == '!' {
+            p = p.split_off(1);
+            let h = p.chars().next().unwrap();
+            if h == '=' {
+                token_list.push(Token {
+                    kind: TokenKind::Reserved,
+                    val: 0,
+                    str: c.to_string() + &h.to_string(),
+                });
+                p = p.split_off(1);
+                continue;
+            } else {
+                return Err(anyhow!("could not tokenize {}", h));
+            }
+        }
+
+        if c == '>' || c == '<' {
+            p = p.split_off(1);
+            let h = p.chars().peekable().peek().cloned().unwrap();
+            if h == '=' {
+                token_list.push(Token {
+                    kind: TokenKind::Reserved,
+                    val: 0,
+                    str: c.to_string() + &h.to_string(),
+                });
+                p = p.split_off(1);
+                continue;
+            } else {
+                token_list.push(Token {
+                    kind: TokenKind::Reserved,
+                    val: 0,
+                    str: c.to_string(),
+                });
+                continue;
+            }
         }
 
         if c.is_ascii_digit() {
@@ -118,10 +155,10 @@ fn new_node_num(val: i64) -> Node {
 fn expr(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
     let mut node = mul(token_list, i)?;
     loop {
-        if consume(&token_list[*i], '+') {
+        if consume(&token_list[*i], "+") {
             *i += 1;
             node = new_node(NodeKind::Add, node, mul(token_list, i)?);
-        } else if consume(&token_list[*i], '-') {
+        } else if consume(&token_list[*i], "-") {
             *i += 1;
             node = new_node(NodeKind::Sub, node, mul(token_list, i)?);
         } else {
@@ -134,10 +171,10 @@ fn mul(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
     let mut node = unary(token_list, i)?;
 
     loop {
-        if consume(&token_list[*i], '*') {
+        if consume(&token_list[*i], "*") {
             *i += 1;
             node = new_node(NodeKind::Mul, node, mul(token_list, i)?);
-        } else if consume(&token_list[*i], '/') {
+        } else if consume(&token_list[*i], "/") {
             *i += 1;
             node = new_node(NodeKind::Div, node, mul(token_list, i)?);
         } else {
@@ -147,11 +184,11 @@ fn mul(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
 }
 
 fn unary(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
-    if consume(&token_list[*i], '+') {
+    if consume(&token_list[*i], "+") {
         *i += 1;
         return primary(token_list, i);
     }
-    if consume(&token_list[*i], '-') {
+    if consume(&token_list[*i], "-") {
         *i += 1;
         return Ok(new_node(
             NodeKind::Sub,
@@ -163,10 +200,10 @@ fn unary(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
 }
 
 fn primary(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
-    if consume(&token_list[*i], '(') {
+    if consume(&token_list[*i], "(") {
         *i += 1;
         let node = expr(token_list, i)?;
-        expect(&token_list[*i], ')')?;
+        expect(&token_list[*i], ")")?;
         *i += 1;
         return Ok(node);
     }
@@ -226,6 +263,7 @@ fn main() -> Result<()> {
     let p = env::args().nth(1).unwrap();
 
     let token_list = tokenize(p)?;
+
     let mut i: usize = 0;
     let node = expr(&token_list, &mut i)?;
 
