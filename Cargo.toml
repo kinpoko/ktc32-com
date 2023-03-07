@@ -1,5 +1,5 @@
 [package]
-name = "ktc32-cc"
+name = "ktc32-com"
 version = "0.1.0"
 edition = "2021"
 

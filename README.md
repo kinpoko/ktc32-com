@@ -1,2 +1,3 @@
-# ktc32-cc
-KTC32 C compiler
+# ktc32-com
+
+KTC32 compiler
