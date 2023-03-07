@@ -124,6 +124,10 @@ enum NodeKind {
     Sub,
     Mul,
     Div,
+    Eq,
+    Ne,
+    Lt,
+    Le,
     Num,
 }
 #[derive(Debug)]
@@ -153,6 +157,46 @@ fn new_node_num(val: i64) -> Node {
 }
 
 fn expr(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
+    equality(token_list, i)
+}
+
+fn equality(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
+    let mut node = relational(token_list, i)?;
+    loop {
+        if consume(&token_list[*i], "==") {
+            *i += 1;
+            node = new_node(NodeKind::Eq, node, relational(token_list, i)?);
+        } else if consume(&token_list[*i], "!=") {
+            *i += 1;
+            node = new_node(NodeKind::Ne, node, relational(token_list, i)?);
+        } else {
+            return Ok(node);
+        }
+    }
+}
+
+fn relational(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
+    let mut node = add(token_list, i)?;
+    loop {
+        if consume(&token_list[*i], "<") {
+            *i += 1;
+            node = new_node(NodeKind::Lt, node, add(token_list, i)?);
+        } else if consume(&token_list[*i], "<=") {
+            *i += 1;
+            node = new_node(NodeKind::Le, node, add(token_list, i)?);
+        } else if consume(&token_list[*i], ">") {
+            *i += 1;
+            node = new_node(NodeKind::Lt, add(token_list, i)?, node);
+        } else if consume(&token_list[*i], ">=") {
+            *i += 1;
+            node = new_node(NodeKind::Le, add(token_list, i)?, node);
+        } else {
+            return Ok(node);
+        }
+    }
+}
+
+fn add(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
     let mut node = mul(token_list, i)?;
     loop {
         if consume(&token_list[*i], "+") {
@@ -169,7 +213,6 @@ fn expr(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
 
 fn mul(token_list: &Vec<Token>, i: &mut usize) -> Result<Node> {
     let mut node = unary(token_list, i)?;
-
     loop {
         if consume(&token_list[*i], "*") {
             *i += 1;
@@ -247,6 +290,31 @@ fn gen(node: Node) {
             println!("  addi t0, t0, 1");
             println!("  sub a0, a1");
             println!("  jal zero, -14");
+            println!("  mov a0, t0");
+        }
+        NodeKind::Eq => {
+            println!("  mov t0, zero");
+            println!("  beq a0, a1, 4");
+            println!("  addi t0, t0, -1");
+            println!("  addi t0, t0, 1");
+            println!("  mov a0, t0");
+        }
+        NodeKind::Ne => {
+            println!("  mov t0, zero");
+            println!("  bnq a0, a1, 4");
+            println!("  addi t0, t0, -1");
+            println!("  addi t0, t0, 1");
+            println!("  mov a0, t0");
+        }
+        NodeKind::Lt => {
+            println!("  slt a0, a1");
+            println!("  mov a0, flag");
+        }
+        NodeKind::Le => {
+            println!("  mov t0, zero");
+            println!("  slt a1, a0");
+            println!("  bnq flag, zero, 4");
+            println!("  addi t0, zero, 1");
             println!("  mov a0, t0");
         }
 
