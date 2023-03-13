@@ -2,8 +2,8 @@ use crate::parse::{Node, NodeKind};
 
 pub fn gen(node: Node) {
     if node.kind == NodeKind::Num {
-        println!("  addi t0, r0, {}", node.val);
         println!("  addi sp, sp, -4");
+        println!("  addi t0, r0, {}", node.val);
         println!("  sw t0, sp, 0",);
         return;
     }
@@ -11,10 +11,9 @@ pub fn gen(node: Node) {
     gen(*node.lhs.unwrap());
     gen(*node.rhs.unwrap());
 
-    println!("  lw a1, sp, 0");
-    println!("  addi sp, sp, 4");
-    println!("  lw a0, sp, 0");
-    println!("  addi sp, sp, 4");
+    println!("  addi sp, sp, 8");
+    println!("  lw a1, sp, -8");
+    println!("  lw a0, sp, -4");
 
     match node.kind {
         NodeKind::Add => {
