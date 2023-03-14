@@ -3,7 +3,7 @@ mod parse;
 mod token;
 use anyhow::{anyhow, Ok, Result};
 use codegen::gen;
-use parse::expr;
+use parse::program;
 use std::env;
 use token::tokenize;
 
@@ -16,12 +16,13 @@ fn main() -> Result<()> {
     let token_list = tokenize(p)?;
 
     let mut i: usize = 0;
-    let node = expr(&token_list, &mut i)?;
+    let node = program(&token_list, &mut i)?;
+    println!("{:?}", node);
 
-    println!("main:");
-    gen(node);
-    println!("  lw a0, sp, 0");
-    println!("  jalr r0, r0, 12");
+    //println!("main:");
+    //gen(node);
+    //println!("  lw a0, sp, 0");
+    //println!("  jalr r0, r0, 12");
 
     Ok(())
 }

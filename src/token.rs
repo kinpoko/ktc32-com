@@ -26,6 +26,7 @@ fn strtol(s: String) -> (String, Option<i64>) {
 #[derive(Debug, PartialEq)]
 pub enum TokenKind {
     Reserved,
+    Ident,
     Num,
     Eof,
 }
@@ -45,7 +46,17 @@ pub fn tokenize(mut p: String) -> Result<Vec<Token>> {
             continue;
         }
 
-        if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' {
+        if c.is_ascii_lowercase() {
+            p = p.split_off(1);
+            token_list.push(Token {
+                kind: TokenKind::Ident,
+                val: 0,
+                str: c.to_string(),
+            });
+            continue;
+        }
+
+        if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == ';' {
             p = p.split_off(1);
             token_list.push(Token {
                 kind: TokenKind::Reserved,
@@ -67,7 +78,12 @@ pub fn tokenize(mut p: String) -> Result<Vec<Token>> {
                 p = p.split_off(1);
                 continue;
             } else {
-                return Err(anyhow!("could not tokenize {}", h));
+                token_list.push(Token {
+                    kind: TokenKind::Reserved,
+                    val: 0,
+                    str: c.to_string(),
+                });
+                continue;
             }
         }
 
