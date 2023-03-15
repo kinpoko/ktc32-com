@@ -1,11 +1,43 @@
 use crate::parse::{Node, NodeKind};
 
+fn gen_lval(node: Node) {
+    if node.kind != NodeKind::Lvar {
+        panic!(" Left side value is not local value");
+    }
+
+    println!("  mov t0, fp");
+    println!("  addi t0, t0, -{}", node.offset);
+    println!("  addi sp, sp, -4");
+    println!("  sw t0, sp, 0",);
+}
+
 pub fn gen(node: Node) {
-    if node.kind == NodeKind::Num {
-        println!("  addi sp, sp, -4");
-        println!("  addi t0, r0, {}", node.val);
-        println!("  sw t0, sp, 0",);
-        return;
+    match node.kind {
+        NodeKind::Num => {
+            println!("  addi sp, sp, -4");
+            println!("  addi t0, r0, {}", node.val);
+            println!("  sw t0, sp, 0",);
+            return;
+        }
+        NodeKind::Lvar => {
+            gen_lval(node);
+            println!("  lw t0, sp, 0");
+            println!("  lw t1, t0, 0");
+            println!("  sw t1, sp, 0");
+            return;
+        }
+        NodeKind::Assign => {
+            gen_lval(*node.lhs.unwrap());
+            gen(*node.rhs.unwrap());
+
+            println!("  lw a1, sp, 0");
+            println!("  lw a0, sp, 4");
+            println!("  sw a1, a0, 0");
+            println!("  addi sp, sp, 4");
+            return;
+        }
+
+        _ => {}
     }
 
     gen(*node.lhs.unwrap());

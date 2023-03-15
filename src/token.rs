@@ -1,5 +1,3 @@
-use anyhow::{anyhow, Ok, Result};
-
 fn strtol(s: String) -> (String, Option<i64>) {
     let mut num = 0;
     let chars = s.chars();
@@ -38,7 +36,7 @@ pub struct Token {
     pub str: String,
 }
 
-pub fn tokenize(mut p: String) -> Result<Vec<Token>> {
+pub fn tokenize(mut p: String) -> Vec<Token> {
     let mut token_list: Vec<Token> = Vec::new();
     while let Some(c) = p.chars().next() {
         if c.is_whitespace() {
@@ -118,7 +116,7 @@ pub fn tokenize(mut p: String) -> Result<Vec<Token>> {
             });
             continue;
         }
-        return Err(anyhow!("could not tokenize {}", c));
+        panic!("could not tokenize {}", c);
     }
 
     token_list.push(Token {
@@ -126,5 +124,5 @@ pub fn tokenize(mut p: String) -> Result<Vec<Token>> {
         val: 0,
         str: "".to_string(),
     });
-    Ok(token_list)
+    token_list
 }
