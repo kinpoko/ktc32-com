@@ -16,9 +16,22 @@ fn strtol(s: String) -> (String, Option<i64>) {
     if !has_digits {
         return (s, None);
     }
-    let result = num;
     let (_, remainder) = s.split_at(index);
-    (remainder.to_string(), Some(result))
+    (remainder.to_string(), Some(num))
+}
+
+fn extract_name(s: String) -> (String, String) {
+    let mut index = 0;
+    for (i, c) in s.chars().enumerate() {
+        if c.is_ascii_alphabetic() {
+            index = i + 1;
+        } else {
+            break;
+        }
+    }
+    let name = s[..index].to_string();
+    let remainder = s[index..].to_string();
+    (remainder, name)
 }
 
 #[derive(Debug, PartialEq)]
@@ -41,16 +54,6 @@ pub fn tokenize(mut p: String) -> Vec<Token> {
     while let Some(c) = p.chars().next() {
         if c.is_whitespace() {
             p = p.split_off(1);
-            continue;
-        }
-
-        if c.is_ascii_lowercase() {
-            p = p.split_off(1);
-            token_list.push(Token {
-                kind: TokenKind::Ident,
-                val: 0,
-                str: c.to_string(),
-            });
             continue;
         }
 
@@ -107,12 +110,23 @@ pub fn tokenize(mut p: String) -> Vec<Token> {
         }
 
         if c.is_ascii_digit() {
-            let (r, n) = strtol(p);
+            let (r, num) = strtol(p);
             p = r;
             token_list.push(Token {
                 kind: TokenKind::Num,
-                val: n.unwrap(),
+                val: num.unwrap(),
                 str: c.to_string(),
+            });
+            continue;
+        }
+
+        if c.is_ascii_alphabetic() {
+            let (r, name) = extract_name(p);
+            p = r;
+            token_list.push(Token {
+                kind: TokenKind::Ident,
+                val: 0,
+                str: name,
             });
             continue;
         }

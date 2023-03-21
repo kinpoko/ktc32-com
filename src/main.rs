@@ -13,27 +13,28 @@ fn main() {
     let p = env::args().nth(1).unwrap();
 
     let token_list = tokenize(p);
+    println!("{:?}", token_list);
 
-    let mut i: usize = 0;
-    let node_list = program(&token_list, &mut i);
+    // let mut i: usize = 0;
+    // let node_list = program(&token_list, &mut i);
 
-    println!("main:");
-    println!("  addi sp, sp, -8");
-    println!("  sw ra, sp, 4");
-    println!("  sw fp, sp, 0");
-    println!("  mov fp, sp");
-    println!("  addi sp, sp, -104");
+    // println!("main:");
+    // println!("  addi sp, sp, -8");
+    // println!("  sw ra, sp, 4");
+    // println!("  sw fp, sp, 0");
+    // println!("  mov fp, sp");
+    // println!("  addi sp, sp, -104");
 
-    for node in node_list {
-        gen(node);
-        println!("  lw a0, sp, 0");
-        println!("  addi sp, sp, 4");
-    }
-    println!("  mov sp, fp");
-    println!("  lw fp, sp, 0");
-    println!("  lw ra, sp, 4");
-    println!("  addi sp, sp, 8");
-    // println!("  jalr zero, ra, 0");
+    // for node in node_list {
+    // gen(node);
+    // println!("  lw a0, sp, 0");
+    // println!("  addi sp, sp, 4");
+    // }
+    // println!("  mov sp, fp");
+    // println!("  lw fp, sp, 0");
+    // println!("  lw ra, sp, 4");
+    // println!("  addi sp, sp, 8");
+    // // println!("  jalr zero, ra, 0");
 
-    println!("  jalr r0, r0, 12");
+    // println!("  jalr r0, r0, 12");
 }
