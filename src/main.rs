@@ -2,7 +2,7 @@ mod codegen;
 mod parse;
 mod token;
 use codegen::gen;
-use parse::program;
+use parse::Parser;
 use std::env;
 use token::tokenize;
 
@@ -13,7 +13,12 @@ fn main() {
     let p = env::args().nth(1).unwrap();
 
     let token_list = tokenize(p);
-    println!("{:?}", token_list);
+    // println!("{:?}", token_list);
+
+    let mut parser = Parser::new(token_list);
+    let node_list = parser.program();
+
+    println!("{:?}", node_list);
 
     // let mut i: usize = 0;
     // let node_list = program(&token_list, &mut i);

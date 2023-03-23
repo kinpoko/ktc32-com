@@ -31,7 +31,7 @@ fn at_eof(token: &Token) -> bool {
     token.kind == TokenKind::Eof
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum NodeKind {
     Add,
     Sub,
@@ -45,7 +45,7 @@ pub enum NodeKind {
     Lvar,
     Num,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Node {
     pub kind: NodeKind,
     pub lhs: Option<Box<Node>>,
@@ -84,127 +84,169 @@ fn new_node_num(val: i64) -> Node {
     }
 }
 
-pub fn program(token_list: &Vec<Token>, i: &mut usize) -> Vec<Node> {
-    let mut code: Vec<Node> = Vec::new();
-    while !at_eof(&token_list[*i]) {
-        code.push(stmt(token_list, i));
-    }
-    code
+#[derive(Debug)]
+pub struct LVar {
+    pub name: String,
+    pub offset: i64,
 }
 
-fn stmt(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    let node = expr(token_list, i);
-    expect(&token_list[*i], ";");
-    *i += 1;
-    node
+#[derive(Debug)]
+pub struct Parser {
+    pub token_list: Vec<Token>,
+    pub i: usize,
+    pub node_list: Vec<Node>,
+    pub lvar_list: Vec<LVar>,
+    pub locals: LVar,
 }
 
-fn expr(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    assign(token_list, i)
-}
-
-fn assign(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    let mut node = equality(token_list, i);
-    if consume(&token_list[*i], "=") {
-        *i += 1;
-        node = new_node(NodeKind::Assign, node, assign(token_list, i));
-    }
-    node
-}
-
-fn equality(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    let mut node = relational(token_list, i);
-    loop {
-        if consume(&token_list[*i], "==") {
-            *i += 1;
-            node = new_node(NodeKind::Eq, node, relational(token_list, i));
-        } else if consume(&token_list[*i], "!=") {
-            *i += 1;
-            node = new_node(NodeKind::Ne, node, relational(token_list, i));
-        } else {
-            return node;
+impl Parser {
+    pub fn new(token_list: Vec<Token>) -> Self {
+        Self {
+            token_list,
+            i: 0,
+            node_list: Vec::new(),
+            lvar_list: Vec::new(),
+            locals: LVar {
+                name: "".to_string(),
+                offset: 0,
+            },
         }
     }
-}
 
-fn relational(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    let mut node = add(token_list, i);
-    loop {
-        if consume(&token_list[*i], "<") {
-            *i += 1;
-            node = new_node(NodeKind::Lt, node, add(token_list, i));
-        } else if consume(&token_list[*i], "<=") {
-            *i += 1;
-            node = new_node(NodeKind::Le, node, add(token_list, i));
-        } else if consume(&token_list[*i], ">") {
-            *i += 1;
-            node = new_node(NodeKind::Lt, add(token_list, i), node);
-        } else if consume(&token_list[*i], ">=") {
-            *i += 1;
-            node = new_node(NodeKind::Le, add(token_list, i), node);
-        } else {
-            return node;
+    fn find_lvar(&self, token: &Token) -> Option<&LVar> {
+        self.lvar_list.iter().find(|&lvar| lvar.name == token.str)
+    }
+
+    pub fn program(&mut self) -> Vec<Node> {
+        while !at_eof(&self.token_list[self.i]) {
+            let node = self.stmt();
+            self.node_list.push(node);
+        }
+        self.node_list.clone()
+    }
+
+    fn stmt(&mut self) -> Node {
+        let node = self.expr();
+        expect(&self.token_list[self.i], ";");
+        self.i += 1;
+        node
+    }
+
+    fn expr(&mut self) -> Node {
+        self.assign()
+    }
+
+    fn assign(&mut self) -> Node {
+        let mut node = self.equality();
+        if consume(&self.token_list[self.i], "=") {
+            self.i += 1;
+            node = new_node(NodeKind::Assign, node, self.assign());
+        }
+        node
+    }
+
+    fn equality(&mut self) -> Node {
+        let mut node = self.relational();
+        loop {
+            if consume(&self.token_list[self.i], "==") {
+                self.i += 1;
+                node = new_node(NodeKind::Eq, node, self.relational());
+            } else if consume(&self.token_list[self.i], "!=") {
+                self.i += 1;
+                node = new_node(NodeKind::Ne, node, self.relational());
+            } else {
+                return node;
+            }
         }
     }
-}
 
-fn add(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    let mut node = mul(token_list, i);
-    loop {
-        if consume(&token_list[*i], "+") {
-            *i += 1;
-            node = new_node(NodeKind::Add, node, mul(token_list, i));
-        } else if consume(&token_list[*i], "-") {
-            *i += 1;
-            node = new_node(NodeKind::Sub, node, mul(token_list, i));
-        } else {
-            return node;
+    fn relational(&mut self) -> Node {
+        let mut node = self.add();
+        loop {
+            if consume(&self.token_list[self.i], "<") {
+                self.i += 1;
+                node = new_node(NodeKind::Lt, node, self.add());
+            } else if consume(&self.token_list[self.i], "<=") {
+                self.i += 1;
+                node = new_node(NodeKind::Le, node, self.add());
+            } else if consume(&self.token_list[self.i], ">") {
+                self.i += 1;
+                node = new_node(NodeKind::Lt, self.add(), node);
+            } else if consume(&self.token_list[self.i], ">=") {
+                self.i += 1;
+                node = new_node(NodeKind::Le, self.add(), node);
+            } else {
+                return node;
+            }
         }
     }
-}
 
-fn mul(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    let mut node = unary(token_list, i);
-    loop {
-        if consume(&token_list[*i], "*") {
-            *i += 1;
-            node = new_node(NodeKind::Mul, node, mul(token_list, i));
-        } else if consume(&token_list[*i], "/") {
-            *i += 1;
-            node = new_node(NodeKind::Div, node, mul(token_list, i));
-        } else {
-            return node;
+    fn add(&mut self) -> Node {
+        let mut node = self.mul();
+        loop {
+            if consume(&self.token_list[self.i], "+") {
+                self.i += 1;
+                node = new_node(NodeKind::Add, node, self.mul());
+            } else if consume(&self.token_list[self.i], "-") {
+                self.i += 1;
+                node = new_node(NodeKind::Sub, node, self.mul());
+            } else {
+                return node;
+            }
         }
     }
-}
 
-fn unary(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    if consume(&token_list[*i], "+") {
-        *i += 1;
-        return primary(token_list, i);
+    fn mul(&mut self) -> Node {
+        let mut node = self.unary();
+        loop {
+            if consume(&self.token_list[self.i], "*") {
+                self.i += 1;
+                node = new_node(NodeKind::Mul, node, self.mul());
+            } else if consume(&self.token_list[self.i], "/") {
+                self.i += 1;
+                node = new_node(NodeKind::Div, node, self.mul());
+            } else {
+                return node;
+            }
+        }
     }
-    if consume(&token_list[*i], "-") {
-        *i += 1;
-        return new_node(NodeKind::Sub, new_node_num(0), primary(token_list, i));
-    }
-    primary(token_list, i)
-}
 
-fn primary(token_list: &Vec<Token>, i: &mut usize) -> Node {
-    if consume(&token_list[*i], "(") {
-        *i += 1;
-        let node = expr(token_list, i);
-        expect(&token_list[*i], ")");
-        *i += 1;
-        return node;
+    fn unary(&mut self) -> Node {
+        if consume(&self.token_list[self.i], "+") {
+            self.i += 1;
+            return self.primary();
+        }
+        if consume(&self.token_list[self.i], "-") {
+            self.i += 1;
+            return new_node(NodeKind::Sub, new_node_num(0), self.primary());
+        }
+        self.primary()
     }
-    if consume_ident(&token_list[*i]) {
-        let offset =
-            ((token_list[*i].str.chars().next().unwrap() as u32 - 'a' as u32 + 1) * 4) as i64;
-        *i += 1;
-        return new_node_lvar(offset);
+
+    fn primary(&mut self) -> Node {
+        if consume(&self.token_list[self.i], "(") {
+            self.i += 1;
+            let node = self.expr();
+            expect(&self.token_list[self.i], ")");
+            self.i += 1;
+            return node;
+        }
+        if consume_ident(&self.token_list[self.i]) {
+            if let Some(lvar) = self.find_lvar(&self.token_list[self.i]) {
+                let offset = lvar.offset;
+                return new_node_lvar(offset);
+            } else {
+                self.locals = LVar {
+                    name: self.token_list[self.i].str.clone(),
+                    offset: self.locals.offset + 4,
+                }
+            }
+            let offset = self.locals.offset;
+            self.i += 1;
+            return new_node_lvar(offset);
+        }
+        let num = expect_number(&self.token_list[self.i]);
+        self.i += 1;
+        new_node_num(num)
     }
-    let num = expect_number(&token_list[*i]);
-    *i += 1;
-    new_node_num(num)
 }
