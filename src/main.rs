@@ -20,9 +20,6 @@ fn main() {
 
     println!("{:?}", node_list);
 
-    // let mut i: usize = 0;
-    // let node_list = program(&token_list, &mut i);
-
     // println!("main:");
     // println!("  addi sp, sp, -8");
     // println!("  sw ra, sp, 4");

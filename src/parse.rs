@@ -14,6 +14,13 @@ fn consume_ident(token: &Token) -> bool {
     true
 }
 
+fn consume_return(token: &Token) -> bool {
+    if token.kind != TokenKind::Return {
+        return false;
+    }
+    true
+}
+
 fn expect(token: &Token, op: &str) {
     if token.kind != TokenKind::Reserved || token.str != op {
         panic!(" It is not {}", op);
@@ -43,6 +50,7 @@ pub enum NodeKind {
     Le,
     Assign,
     Lvar,
+    Return,
     Num,
 }
 #[derive(Debug, Clone)]
@@ -84,7 +92,7 @@ fn new_node_num(val: i64) -> Node {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LVar {
     pub name: String,
     pub offset: i64,
@@ -126,7 +134,18 @@ impl Parser {
     }
 
     fn stmt(&mut self) -> Node {
-        let node = self.expr();
+        let node: Node = if consume_return(&self.token_list[self.i]) {
+            self.i += 1;
+            Node {
+                kind: NodeKind::Return,
+                lhs: Some(Box::new(self.expr())),
+                rhs: None,
+                val: 0,
+                offset: 0,
+            }
+        } else {
+            self.expr()
+        };
         expect(&self.token_list[self.i], ";");
         self.i += 1;
         node
@@ -234,16 +253,18 @@ impl Parser {
         if consume_ident(&self.token_list[self.i]) {
             if let Some(lvar) = self.find_lvar(&self.token_list[self.i]) {
                 let offset = lvar.offset;
+                self.i += 1;
                 return new_node_lvar(offset);
             } else {
                 self.locals = LVar {
                     name: self.token_list[self.i].str.clone(),
                     offset: self.locals.offset + 4,
-                }
+                };
+                self.lvar_list.push(self.locals.clone());
+                let offset = self.locals.offset;
+                self.i += 1;
+                return new_node_lvar(offset);
             }
-            let offset = self.locals.offset;
-            self.i += 1;
-            return new_node_lvar(offset);
         }
         let num = expect_number(&self.token_list[self.i]);
         self.i += 1;

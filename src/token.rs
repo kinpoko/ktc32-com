@@ -38,6 +38,7 @@ fn extract_name(s: String) -> (String, String) {
 pub enum TokenKind {
     Reserved,
     Ident,
+    Return,
     Num,
     Eof,
 }
@@ -123,11 +124,19 @@ pub fn tokenize(mut p: String) -> Vec<Token> {
         if c.is_ascii_alphabetic() {
             let (r, name) = extract_name(p);
             p = r;
-            token_list.push(Token {
-                kind: TokenKind::Ident,
-                val: 0,
-                str: name,
-            });
+            if name == "return" {
+                token_list.push(Token {
+                    kind: TokenKind::Return,
+                    val: 0,
+                    str: name,
+                })
+            } else {
+                token_list.push(Token {
+                    kind: TokenKind::Ident,
+                    val: 0,
+                    str: name,
+                });
+            }
             continue;
         }
         panic!("could not tokenize {}", c);
