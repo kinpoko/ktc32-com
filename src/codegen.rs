@@ -36,6 +36,17 @@ pub fn gen(node: Node) {
             println!("  addi sp, sp, 4");
             return;
         }
+        NodeKind::Return => {
+            gen(*node.lhs.unwrap());
+            println!("  lw a0, sp, 0");
+            println!("  addi sp, sp, 4");
+            println!("  mov sp, fp");
+            println!("  lw fp, sp, 0");
+            println!("  lw ra, sp, 4");
+            println!("  addi sp, sp, 8");
+            println!("  jalr zero, ra, 0");
+            return;
+        }
 
         _ => {}
     }
