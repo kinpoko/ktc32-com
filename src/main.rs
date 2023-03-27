@@ -18,17 +18,17 @@ fn main() {
     let mut parser = Parser::new(token_list);
     let node_list = parser.program();
 
-    // println!("{:?}", node_list);
+    println!("{:?}", node_list);
 
-    println!("main:");
-    println!("  addi sp, sp, -8");
-    println!("  sw ra, sp, 4");
-    println!("  sw fp, sp, 0");
-    println!("  mov fp, sp");
-    println!("  addi sp, sp -{}", parser.locals.offset);
+    //   println!("main:");
+    //println!("  addi sp, sp, -8");
+    //println!("  sw ra, sp, 4");
+    //println!("  sw fp, sp, 0");
+    //println!("  mov fp, sp");
+    //println!("  addi sp, sp -{}", parser.locals.offset);
 
-    for node in node_list {
-        gen(node);
-        println!("  addi sp, sp, 4");
-    }
+    //for node in node_list {
+    //gen(node);
+    //println!("  addi sp, sp, 4");
+    //}
 }

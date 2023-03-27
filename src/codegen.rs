@@ -36,6 +36,13 @@ pub fn gen(node: Node) {
             println!("  addi sp, sp, 4");
             return;
         }
+        NodeKind::If => {
+            gen(*node.cond.unwrap());
+            println!("  lw a0, sp, 0");
+            println!("  addi sp, sp, 4");
+            todo!();
+            return;
+        }
         NodeKind::Return => {
             gen(*node.lhs.unwrap());
             println!("  lw a0, sp, 0");
