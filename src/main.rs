@@ -1,7 +1,7 @@
 mod codegen;
 mod parse;
 mod token;
-use codegen::gen;
+use codegen::CodeGenerator;
 use parse::Parser;
 use std::env;
 use token::tokenize;
@@ -18,17 +18,16 @@ fn main() {
     let mut parser = Parser::new(token_list);
     let node_list = parser.program();
 
-    println!("{:?}", node_list);
+    let codegen = CodeGenerator::new(node_list);
 
-    //   println!("main:");
-    //println!("  addi sp, sp, -8");
-    //println!("  sw ra, sp, 4");
-    //println!("  sw fp, sp, 0");
-    //println!("  mov fp, sp");
-    //println!("  addi sp, sp -{}", parser.locals.offset);
+    println!("{:?}", codegen.node_list);
 
-    //for node in node_list {
-    //gen(node);
-    //println!("  addi sp, sp, 4");
-    //}
+    println!("main:");
+    println!("  addi sp, sp, -8");
+    println!("  sw ra, sp, 4");
+    println!("  sw fp, sp, 0");
+    println!("  mov fp, sp");
+    println!("  addi sp, sp -{}", parser.locals.offset);
+
+    codegen.gen_code();
 }
