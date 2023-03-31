@@ -18,9 +18,9 @@ fn main() {
     let mut parser = Parser::new(token_list);
     let node_list = parser.program();
 
-    let codegen = CodeGenerator::new(node_list);
+    let mut codegen = CodeGenerator::new();
 
-    println!("{:?}", codegen.node_list);
+    // println!("{:?}", node_list);
 
     println!("main:");
     println!("  addi sp, sp, -8");
@@ -29,5 +29,8 @@ fn main() {
     println!("  mov fp, sp");
     println!("  addi sp, sp -{}", parser.locals.offset);
 
-    codegen.gen_code();
+    for node in node_list {
+        codegen.gen(&node);
+        println!("  addi sp, sp, 4");
+    }
 }

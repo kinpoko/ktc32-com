@@ -2,23 +2,12 @@ use crate::parse::{Node, NodeKind};
 
 #[derive(Debug)]
 pub struct CodeGenerator {
-    pub node_list: Vec<Node>,
     pub count: i64,
 }
 
 impl CodeGenerator {
-    pub fn new(node_list: Vec<Node>) -> Self {
-        Self {
-            node_list,
-            count: 0,
-        }
-    }
-
-    pub fn gen_code(&self) {
-        for node in &self.node_list {
-            self.gen(node);
-            println!("  addi sp, sp, 4");
-        }
+    pub fn new() -> Self {
+        Self { count: 0 }
     }
 
     fn gen_lval(&self, node: &Node) {
@@ -32,7 +21,7 @@ impl CodeGenerator {
         println!("  sw t0, sp, 0",);
     }
 
-    fn gen(&self, node: &Node) {
+    pub fn gen(&mut self, node: &Node) {
         match node.kind {
             NodeKind::Num => {
                 println!("  addi sp, sp, -4");
@@ -61,7 +50,23 @@ impl CodeGenerator {
                 self.gen(node.cond.as_ref().unwrap());
                 println!("  lw a0, sp, 0");
                 println!("  addi sp, sp, 4");
-                todo!();
+                println!("  addi t0, zero, 1");
+                println!("  beq a0, t0, 4");
+                println!("  jal zero, else{}", self.count);
+                self.gen(node.then.as_ref().unwrap());
+                println!("  jal zero, end{}", self.count);
+                println!("else{}:", self.count);
+                match &node.els {
+                    Some(_) => {
+                        self.gen(node.els.as_ref().unwrap());
+                    }
+                    None => {
+                        println!("  jal zero, end{}", self.count);
+                    }
+                }
+
+                println!("end{}:", self.count);
+                self.count += 1;
                 return;
             }
             NodeKind::Return => {
@@ -137,6 +142,6 @@ impl CodeGenerator {
             _ => {}
         }
         println!("  addi sp, sp, -4");
-        println!("  sw a0, sp, 0",);
+        println!("  sw a0, sp, 0");
     }
 }
