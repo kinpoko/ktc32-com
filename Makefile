@@ -1,6 +1,6 @@
-TESTS:=$(wildcard tests/*.c)
-ASM:=$(patsubst %.c, %.asm, $(notdir $(TESTS)))
-BIN:=$(patsubst %.c, %.bin, $(notdir $(TESTS)))
+TESTS:=$(wildcard tests/*.ktc)
+ASM:=$(patsubst %.ktc, %.asm, $(notdir $(TESTS)))
+BIN:=$(patsubst %.ktc, %.bin, $(notdir $(TESTS)))
 
 .PHONY: test
 test: asm bin
@@ -8,7 +8,7 @@ test: asm bin
 .PHONY: asm
 asm: $(ASM) 
 
-%.asm: tests/%.c
+%.asm: tests/%.ktc
 	cargo run $< > $@
 
 .PHONY: bin
