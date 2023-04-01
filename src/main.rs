@@ -10,7 +10,8 @@ fn main() {
     if env::args().len() != 2 {
         panic!("Incorrect number of arguments");
     }
-    let p = env::args().nth(1).unwrap();
+    let filepath = env::args().nth(1).unwrap();
+    let p = std::fs::read_to_string(filepath).unwrap();
 
     let token_list = tokenize(p);
     // println!("{:?}", token_list);
