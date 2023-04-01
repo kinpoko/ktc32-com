@@ -124,7 +124,7 @@ pub fn tokenize(mut p: String) -> Vec<Token> {
             let (r, name) = extract_name(p);
             p = r;
             match name.as_str() {
-                "return" | "if" | "else" => token_list.push(Token {
+                "return" | "if" | "else" | "while" | "for" => token_list.push(Token {
                     kind: TokenKind::Reserved,
                     val: 0,
                     str: name,

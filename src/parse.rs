@@ -44,6 +44,8 @@ pub enum NodeKind {
     Assign,
     Lvar,
     If,
+    For,
+    While,
     Return,
     Num,
 }
@@ -57,6 +59,8 @@ pub struct Node {
     pub cond: Option<Box<Node>>,
     pub then: Option<Box<Node>>,
     pub els: Option<Box<Node>>,
+    pub init: Option<Box<Node>>,
+    pub inc: Option<Box<Node>>,
 }
 
 fn new_node(kind: NodeKind, lhs: Node, rhs: Node) -> Node {
@@ -69,6 +73,23 @@ fn new_node(kind: NodeKind, lhs: Node, rhs: Node) -> Node {
         cond: None,
         then: None,
         els: None,
+        init: None,
+        inc: None,
+    }
+}
+
+fn new_node_none(kind: NodeKind) -> Node {
+    Node {
+        kind,
+        lhs: None,
+        rhs: None,
+        val: 0,
+        offset: 0,
+        cond: None,
+        then: None,
+        els: None,
+        init: None,
+        inc: None,
     }
 }
 
@@ -82,6 +103,8 @@ fn new_node_lvar(offset: i64) -> Node {
         cond: None,
         then: None,
         els: None,
+        init: None,
+        inc: None,
     }
 }
 
@@ -95,6 +118,8 @@ fn new_node_num(val: i64) -> Node {
         cond: None,
         then: None,
         els: None,
+        init: None,
+        inc: None,
     }
 }
 
@@ -141,53 +166,80 @@ impl Parser {
 
     fn stmt(&mut self) -> Node {
         if consume(&self.token_list[self.i], "return") {
+            let mut node = new_node_none(NodeKind::Return);
             self.i += 1;
-            let node = Node {
-                kind: NodeKind::Return,
-                lhs: Some(Box::new(self.expr())),
-                rhs: None,
-                val: 0,
-                offset: 0,
-                cond: None,
-                then: None,
-                els: None,
-            };
+
+            node.lhs = Some(Box::new(self.expr()));
+
             expect(&self.token_list[self.i], ";");
             self.i += 1;
+
             node
         } else if consume(&self.token_list[self.i], "if") {
+            let mut node = new_node_none(NodeKind::If);
             self.i += 1;
+
             expect(&self.token_list[self.i], "(");
             self.i += 1;
-            let cond = self.expr();
+
+            node.cond = Some(Box::new(self.expr()));
+
             expect(&self.token_list[self.i], ")");
             self.i += 1;
-            let then = self.stmt();
+
+            node.then = Some(Box::new(self.stmt()));
+
             if consume(&self.token_list[self.i], "else") {
                 self.i += 1;
-                let els = self.stmt();
-                Node {
-                    kind: NodeKind::If,
-                    lhs: None,
-                    rhs: None,
-                    val: 0,
-                    offset: 0,
-                    cond: Some(Box::new(cond)),
-                    then: Some(Box::new(then)),
-                    els: Some(Box::new(els)),
-                }
+                node.els = Some(Box::new(self.stmt()));
+                node
             } else {
-                Node {
-                    kind: NodeKind::If,
-                    lhs: None,
-                    rhs: None,
-                    val: 0,
-                    offset: 0,
-                    cond: Some(Box::new(cond)),
-                    then: Some(Box::new(then)),
-                    els: None,
-                }
+                node
             }
+        } else if consume(&self.token_list[self.i], "while") {
+            let mut node = new_node_none(NodeKind::While);
+            self.i += 1;
+
+            expect(&self.token_list[self.i], "(");
+            self.i += 1;
+
+            node.cond = Some(Box::new(self.expr()));
+
+            expect(&self.token_list[self.i], ")");
+            self.i += 1;
+
+            node.then = Some(Box::new(self.stmt()));
+            node
+        } else if consume(&self.token_list[self.i], "for") {
+            let mut node = new_node_none(NodeKind::For);
+            self.i += 1;
+
+            expect(&self.token_list[self.i], "(");
+            self.i += 1;
+
+            if !consume(&self.token_list[self.i], ";") {
+                node.init = Some(Box::new(self.expr()));
+
+                expect(&self.token_list[self.i], ";");
+            }
+            self.i += 1;
+
+            if !consume(&self.token_list[self.i], ";") {
+                node.cond = Some(Box::new(self.expr()));
+
+                expect(&self.token_list[self.i], ";");
+            }
+            self.i += 1;
+
+            if !consume(&self.token_list[self.i], ")") {
+                node.inc = Some(Box::new(self.expr()));
+
+                expect(&self.token_list[self.i], ")");
+            }
+            self.i += 1;
+
+            node.then = Some(Box::new(self.stmt()));
+            node
         } else {
             let node = self.expr();
             expect(&self.token_list[self.i], ";");

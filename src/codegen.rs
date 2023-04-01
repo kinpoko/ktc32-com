@@ -64,7 +64,36 @@ impl CodeGenerator {
                         println!("  jal zero, end{}", self.count);
                     }
                 }
-
+                println!("end{}:", self.count);
+                self.count += 1;
+                return;
+            }
+            NodeKind::While => {
+                println!("begin{}:", self.count);
+                self.gen(node.cond.as_ref().unwrap());
+                println!("  lw a0, sp, 0");
+                println!("  addi sp, sp, 4");
+                println!("  addi t0, zero, 1");
+                println!("  beq a0, t0, 4");
+                println!("  jal zero, end{}", self.count);
+                self.gen(node.then.as_ref().unwrap());
+                println!("  jal zero, begin{}", self.count);
+                println!("end{}:", self.count);
+                self.count += 1;
+                return;
+            }
+            NodeKind::For => {
+                self.gen(node.init.as_ref().unwrap());
+                println!("begin{}:", self.count);
+                self.gen(node.cond.as_ref().unwrap());
+                println!("  lw a0, sp, 0");
+                println!("  addi sp, sp, 4");
+                println!("  addi t0, zero, 1");
+                println!("  beq a0, t0, 4");
+                println!("  jal zero, end{}", self.count);
+                self.gen(node.then.as_ref().unwrap());
+                self.gen(node.inc.as_ref().unwrap());
+                println!("  jal zero, begin{}", self.count);
                 println!("end{}:", self.count);
                 self.count += 1;
                 return;

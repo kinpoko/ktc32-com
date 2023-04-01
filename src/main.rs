@@ -14,7 +14,7 @@ fn main() {
     let p = std::fs::read_to_string(filepath).unwrap();
 
     let token_list = tokenize(p);
-    // println!("{:?}", token_list);
+    //  println!("{:?}", token_list);
 
     let mut parser = Parser::new(token_list);
     let node_list = parser.program();
