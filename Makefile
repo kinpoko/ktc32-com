@@ -1,19 +1,23 @@
-.PHONY: all
-all: test1 test2 test3
+TESTS:=$(wildcard tests/*.c)
+ASM:=$(patsubst %.c, %.asm, $(notdir $(TESTS)))
+BIN:=$(patsubst %.c, %.bin, $(notdir $(TESTS)))
 
-test1:
-	cargo run 'a = 1; b = 2; return a + b;' > test1.asm
-	ktc32-asm test1.asm -o test1.mem
+.PHONY: test
+test: asm bin
 
-test2:
-	cargo run 'a = 3; if (a == 1) return 1; return 2;' > test2.asm
-	ktc32-asm test2.asm -o test2.mem
+.PHONY: asm
+asm: $(ASM) 
 
-test3:
-	cargo run 'a = 1; if (a == 1) a = a + 1; else a = a * 3; return a;' > test3.asm
-	ktc32-asm test3.asm -o test3.mem
+%.asm: tests/%.c
+	cargo run $< > $@
+
+.PHONY: bin
+bin: $(BIN) 
+
+%.bin: %.asm
+	ktc32-asm $< -o $@
 
 .PHONY: clean
 clean:
 	rm -rf *.asm
-	rm -rf *.mem
+	rm -rf *.bin
